@@ -606,26 +606,55 @@
 
     if (USE_ROUTES && AMap.Driving) {
       setStat();
-      var driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME });
-      LEGS.forEach(function (leg, i) {
-        setTimeout(function () {
-          if (leg.day === 'train') { draw(leg, straight(leg), true, false); return; }
-          var A = P[leg.a], B = P[leg.b];
-          try {
-            driving.search([A.lng, A.lat], [B.lng, B.lat], function (status, result) {
-              var path = null;
-              if (status === 'complete' && result && result.routes && result.routes.length) {
-                path = [];
-                (result.routes[0].steps || []).forEach(function (s) {
-                  (s.path || []).forEach(function (pt) { path.push([pt.lng, pt.lat]); });
-                });
-              }
-              if (path && path.length) { draw(leg, path, false, false); }
-              else { draw(leg, straight(leg), true, true); }
-            });
-          } catch (e) { draw(leg, straight(leg), true, true); }
-        }, i * 220);
-      });
+      /* 逐段串行规划：复用同一个 Driving 实例、密集并发请求会被限流，
+         导致部分路段返回 error 而退回直线。改为每段独立实例 + 串行 + 失败重试一次。 */
+      var queue = LEGS.slice();
+
+      function planNext() {
+        var leg = queue.shift();
+        if (!leg) return;
+        if (leg.day === 'train') {
+          draw(leg, straight(leg), true, false);
+          setTimeout(planNext, 0);
+          return;
+        }
+        planLeg(leg, 0);
+      }
+
+      function planLeg(leg, attempt) {
+        var A = P[leg.a], B = P[leg.b];
+        var driving = new AMap.Driving({ policy: AMap.DrivingPolicy.LEAST_TIME });
+        var settled = false;
+
+        function handle(path) {
+          if (settled) return;
+          settled = true;
+          if (path && path.length) {
+            draw(leg, path, false, false);
+            setTimeout(planNext, 120);
+          } else if (attempt < 1) {
+            setTimeout(function () { planLeg(leg, attempt + 1); }, 500);
+          } else {
+            draw(leg, straight(leg), true, true);
+            setTimeout(planNext, 120);
+          }
+        }
+
+        try {
+          driving.search([A.lng, A.lat], [B.lng, B.lat], function (status, result) {
+            var path = null;
+            if (status === 'complete' && result && result.routes && result.routes.length) {
+              path = [];
+              (result.routes[0].steps || []).forEach(function (s) {
+                (s.path || []).forEach(function (pt) { path.push([pt.lng, pt.lat]); });
+              });
+            }
+            handle(path);
+          });
+        } catch (e) { handle(null); }
+      }
+
+      planNext();
     } else {
       LEGS.forEach(function (leg) { draw(leg, straight(leg), true, true); });
       setStat();
