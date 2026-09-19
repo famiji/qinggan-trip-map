@@ -60,21 +60,23 @@
   .foot button{font-family:inherit;font-size:11px;font-weight:700;color:var(--ink2);background:none;border:0;padding:0;margin-top:10px;text-decoration:underline;cursor:pointer;}
 
   #map{flex:1;height:100vh;height:100dvh;position:relative;background:var(--cream);}
-  /* 底图整体转为奶油纸色，贴近海报质感（只作用于瓦片图层，不波及标记） */
-  #map .amap-layers{filter:sepia(.55) saturate(.5) brightness(.87) contrast(.96);}
+  /* 底图转为浅奶油纸色；滤镜尽量温和，避免把底图注记洗淡 */
+  #map .amap-layers{filter:sepia(.34) saturate(.62) brightness(1.02) contrast(.99);}
 
   /* 地图标注：无底色、无描边，纯文字 + 白色外发光保证可读性 */
   .mp{position:relative;display:flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer;}
+  /* 文字整体可被平移，用来避开路线（圆点始终留在真实坐标上） */
+  .mp-lbl{display:flex;align-items:center;gap:5px;}
   .mp-d{width:6px;height:6px;border-radius:50%;background:var(--ink);flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.95);}
   .mp-d.lodge{transform:scale(1.45);}
   .mp-d.via{background:var(--ink3);}
   .mp-d.blue{background:var(--blue);}
-  /* 住宿点：空心圆点，与实心的途经/景点点区分 */
-  .mp-d.staypin{width:9px;height:9px;background:#fff;box-shadow:0 0 0 2.5px var(--ink),0 0 0 4.5px rgba(255,255,255,.9);}
-  .mp-n{font-size:10px;font-weight:700;color:var(--ink3);font-variant-numeric:tabular-nums;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 3px #fff;}
-  .mp-t{font-size:12px;font-weight:700;color:var(--ink);letter-spacing:-.01em;
+  /* 住宿点：房子图标，与圆点标记区分 */
+  .mp-house{display:block;line-height:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.28));}
+  .mp-n{font-size:10px;font-weight:700;color:#5A564C;font-variant-numeric:tabular-nums;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 3px #fff;}
+  .mp-t{font-size:12px;font-weight:700;color:#101010;letter-spacing:-.01em;
     text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 4px #fff,0 0 5px #fff;}
-  .mp-t.via{font-weight:500;color:#6B6659;}
+  .mp-t.via{font-weight:500;color:#4A463C;}
   .mp-t.blue{color:var(--blue);}
 
   .stat-pill{position:absolute;left:16px;top:16px;background:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:6px 14px;font-size:11.5px;font-weight:700;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);z-index:20;display:none;}
@@ -250,21 +252,21 @@
   var P = [
     { n: '兰州',        d: 1, lng: 103.8343, lat: 36.0611, t: '住宿 · 缓冲日 · 海拔 1,500 m' },
     { n: '西宁',        d: 2, lng: 101.7782, lat: 36.6171, t: '取车 · 兰州乘火车约 2 h 抵达' },
-    { n: '日月山',      d: 2, lng: 100.9727, lat: 36.4386, t: '途经 · 文成公主进藏途经地，西宁至青海湖必经', offpy: 18 },
-    { n: '青海湖·二郎剑', d: 2, lng: 100.4820, lat: 36.5535, t: '景点 · 海拔约 3,200 m', offpy: -18 },
+    { n: '日月山',      d: 2, lng: 100.9727, lat: 36.4386, t: '途经 · 文成公主进藏途经地，西宁至青海湖必经', lody: -38 },
+    { n: '青海湖',      d: 2, lng: 100.4820, lat: 36.5535, t: '景点 · 二郎剑景区 · 海拔约 3,200 m', lody: 18 },
     { n: '黑马河',      d: 2, lng: 99.7300,  lat: 36.7100, t: '景点 · 湖西岸' },
     { n: '乌兰县',      d: 2, lng: 98.4790,  lat: 36.9290, t: '途经 · 海拔约 2,950 m' },
-    { n: '格尔木',      d: 3, lng: 94.9030,  lat: 36.4070, t: '住宿 · 沿线补给最完善的城市' },
-    { n: '察尔汗盐湖',  d: 3, lng: 95.3200,  lat: 36.8200, t: '景点 · 柴达木盆地最大盐湖 · 距格尔木约 1 h 往返' },
+    { n: '格尔木',      d: 3, lng: 94.9030,  lat: 36.4070, t: '住宿 · 沿线补给最完善的城市', lody: 18 },
+    { n: '察尔汗盐湖',  d: 3, lng: 95.3200,  lat: 36.8200, t: '景点 · 柴达木盆地最大盐湖 · 距格尔木约 1 h 往返', lody: -16 },
     { n: '大柴旦',      d: 4, lng: 95.2900,  lat: 37.8500, t: '途经 · 翡翠湖就在镇旁' },
-    { n: '黑独山',      d: 4, lng: 93.4300,  lat: 38.8300, t: '景点 · 冷湖镇东北约 12 km，G215 旁 · 换乘景交车 · 18:00 停止检票' },
+    { n: '黑独山',      d: 4, lng: 93.4300,  lat: 38.8300, t: '景点 · 冷湖镇东北约 12 km，G215 旁 · 换乘景交车 · 18:00 停止检票', lody: -20 },
     { n: '当金山口',    d: 4, lng: 94.2700,  lat: 39.3200, t: '途经 · 当金山垭口海拔 3,648 m · 祁连山与阿尔金山结合部，青甘分界 · 至阿克塞连续 42 km 长下坡' },
-    { n: '敦煌',        d: 5, lng: 94.6620,  lat: 40.1420, t: '住宿两晚 · 莫高窟 · 鸣沙山月牙泉', offpy: -19 },
-    { n: '莫高窟',      d: 5, lng: 94.8077,  lat: 40.0427, t: '景点 · 需提前预约', offpy: 19 },
-    { n: '鸣沙山月牙泉', d: 5, lng: 94.6715, lat: 40.0861, t: '景点 · 若 10.4 晚未去，10.5 傍晚去' },
-    { n: '张掖',        d: 6, lng: 100.4490, lat: 38.9250, t: '住宿 · 七彩丹霞日落' },
+    { n: '敦煌',        d: 5, lng: 94.6620,  lat: 40.1420, t: '住宿两晚 · 莫高窟 · 鸣沙山月牙泉', lody: -19 },
+    { n: '莫高窟',      d: 5, lng: 94.8077,  lat: 40.0427, t: '景点 · 需提前预约', lody: 19 },
+    { n: '鸣沙山月牙泉', d: 5, lng: 94.6715, lat: 40.0861, t: '景点 · 若 10.4 晚未去，10.5 傍晚去', lodx: 0, lody: 0 },
+    { n: '张掖',        d: 6, lng: 100.4490, lat: 38.9250, t: '住宿 · 七彩丹霞日落', lody: -18 },
     { n: '祁连县',      d: 7, lng: 100.2500, lat: 38.1760, t: '途经 · G227 绕行路线经过' },
-    { n: '西宁（还车）', d: 7, lng: 101.7782, lat: 36.6171, t: '还车 · 建议预留缓冲或住一晚', offpx: 30, offpy: 26 }
+    { n: '西宁（还车）', d: 7, lng: 101.7782, lat: 36.6171, t: '还车 · 建议预留缓冲或住一晚', lodx: 20, lody: 38 }
   ];
 
   var LEGS = [
@@ -581,13 +583,47 @@
       return 'blue';
     }
 
+    /* 路线依次经过的点 → 用「前一个点 → 后一个点」的连线判断该处路线走向 */
+    var SEQ = [];
+    LEGS.forEach(function (l) {
+      if (!SEQ.length) SEQ.push(l.a);
+      SEQ.push(l.b);
+    });
+
+    /* 标签位移：路线偏东西向时把文字上下让开，避免压在路线上；
+       偏南北向时右置即可。手写 lodx/lody 优先，用于枢纽点与挤在一起的标注。 */
+    function labelShift(p, i) {
+      if (p.lodx !== undefined || p.lody !== undefined) {
+        return { dx: p.lodx || 0, dy: p.lody || 0 };
+      }
+      var k = SEQ.indexOf(i);
+      if (k < 0) return { dx: 0, dy: 0 };
+      var a = SEQ[k - 1], b = SEQ[k + 1];
+      var kx = Math.cos(p.lat * Math.PI / 180);
+      var tx, ty;
+      if (a === undefined || b === undefined) {
+        var j = (a === undefined) ? b : a;
+        if (j === undefined) return { dx: 0, dy: 0 };
+        tx = (P[j].lng - p.lng) * kx; ty = P[j].lat - p.lat;
+      } else {
+        tx = (P[b].lng - P[a].lng) * kx; ty = P[b].lat - P[a].lat;
+      }
+      var td = Math.sqrt(tx * tx + ty * ty);
+      if (!td) return { dx: 0, dy: 0 };
+      tx /= td;
+      if (Math.abs(tx) < 0.8) return { dx: 0, dy: 0 };
+      return { dx: 0, dy: tx > 0 ? 18 : -18 };
+    }
+
     function labelHTML(p, i) {
       var ty = mtype(p.t);
+      var sh = labelShift(p, i);
       return '<div class="mp">' +
         '<span class="mp-d ' + ty + '"></span>' +
+        '<span class="mp-lbl" style="transform:translate(' + sh.dx + 'px,' + sh.dy + 'px)">' +
         '<span class="mp-n">' + (i + 1) + '</span>' +
         '<span class="mp-t ' + ty + '">' + p.n + '</span>' +
-        '</div>';
+        '</span></div>';
     }
 
     markerRefs = [];
@@ -596,7 +632,7 @@
         position: [p.lng, p.lat],
         content: labelHTML(p, i),
         /* 圆点即地理坐标：向左上偏移半个点径，使点心落在坐标上 */
-        offset: new AMap.Pixel(-3 + (p.offpx || 0), -3 + (p.offpy || 0)),
+        offset: new AMap.Pixel(-3, -3),
         zIndex: 100
       });
       m.on('click', function () {
@@ -718,7 +754,11 @@
 
     /* ---------- 住宿定位 ---------- */
     function stayHTML() {
-      return '<div class="mp"><span class="mp-d staypin"></span></div>';
+      return '<div class="mp"><span class="mp-house">' +
+        '<svg width="15" height="15" viewBox="0 0 15 15">' +
+        '<path d="M7.5 1.6 L13.6 6.7 L11.8 6.7 L11.8 13.2 L3.2 13.2 L3.2 6.7 L1.4 6.7 Z" ' +
+        'fill="#1A1A18" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/>' +
+        '</svg></span></div>';
     }
 
     if (USE_ROUTES && AMap.Geocoder) {
@@ -732,7 +772,7 @@
               var m = new AMap.Marker({
                 position: [loc.lng, loc.lat],
                 content: stayHTML(),
-                offset: new AMap.Pixel(-4.5, -4.5),
+                offset: new AMap.Pixel(-7.5, -7.5),
                 zIndex: 120
               });
               m.on('click', function () {
